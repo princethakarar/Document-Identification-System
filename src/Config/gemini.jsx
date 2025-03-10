@@ -1,13 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = ""; // Replace with your actual API key
+const apiKey = "AIzaSyBFfOMVFqC3zh70lH9-tBlQ5FHM5cGpMVI"; // Replace with your actual API key
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function run(base64string, mimeType) {
     try {
-        const prompt = `Which document is this and give numerical details written in the document. and behave professionaly don't print unneccessary text(like, here is numerical details and all or numerical details are) i mean to say that you don't need to print it is numerical details we can understand what it is`;
+        const prompt = `Which document is this and give numerical details written in the document. and behave professionaly don't print unneccessary text(like, here is numerical details and all or numerical details are) i mean to say that you don't need to print it is numerical details we can understand what it is. give details in bold and numerical details in normal details should be accurate`;
 
         const result = await model.generateContent([
             { text: prompt },

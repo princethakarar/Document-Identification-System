@@ -21,7 +21,6 @@ async function run(base64string, mimeType) {
 
         const response = await result.response.text();
         
-        // Split and format response
         let responseArray = response.split("**").map(item => item.trim());
         let newArray = "";
 

@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
-import './sidebar.css';
 import { assets } from '../assets/assets';
 
 const Sidebar = ({ prevPrompts, onSelectPrompt }) => {
     const [extended, setExtended] = useState(false);
 
     return (
-        <div className='sidebar'>
-            <div className="top">
-                <img onClick={() => setExtended(prev => !prev)} className="menu" src={assets.menu_icon} alt="menu" />
+        <div className="min-h-screen flex flex-col justify-between bg-gray-100 p-6">
+            <div className="flex flex-col">
+                <img 
+                    onClick={() => setExtended(prev => !prev)} 
+                    className="w-5 cursor-pointer mb-4" 
+                    src={assets.menu_icon} 
+                    alt="menu" 
+                />
+
                 {extended && (
-                    <div className="recent">
-                        <p className="recent-title">Recent</p>
+                    <div className="flex flex-col">
+                        <p className="mt-6 mb-4 text-gray-600 font-semibold">Recent</p>
                         {prevPrompts.map((item, index) => (
                             <div 
                                 key={index} 
-                                className="recent-entry" 
-                                onClick={() => onSelectPrompt(item)} // Pass full item object
+                                className="flex items-start gap-3 p-3 pr-12 rounded-full text-gray-800 cursor-pointer hover:bg-gray-200 transition"
+                                onClick={() => onSelectPrompt(item)}
                             >
-                                <img src={assets.message_icon} alt="message" />
-                                <p>{item.text.slice(0, 20)}...</p>
+                                <img className="w-5" src={assets.message_icon} alt="message" />
+                                <p className="truncate">{item.text.slice(0, 20)}...</p>
                             </div>
                         ))}
                     </div>

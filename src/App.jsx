@@ -1,15 +1,14 @@
 import { useState, useContext, useEffect } from "react";
-import "./App.css";
 import Sidebar from "./sidebar/sidebar";
 import { Context } from "./context/Context";
 
 function App() {
   const [imageData, setImageData] = useState(null);
+  const [selectedResponse, setSelectedResponse] = useState(""); 
   const { onSent, response } = useContext(Context);
-  const [responseText, setResponseText] = useState(null);
   const [prevPrompts, setPrevPrompts] = useState([]); // Store previous responses
 
-  // Function to remove HTML tags
+  // Function to remove HTML tags for Sidebar display
   const stripHtmlTags = (html) => {
     const doc = new DOMParser().parseFromString(html, "text/html");
     return doc.body.textContent || "";
@@ -23,8 +22,6 @@ function App() {
     reader.onload = async (e) => {
       let base64string = e.target.result.split(",")[1];
       setImageData(e.target.result);
-
-      // Send image to Gemini API
       onSent(base64string, file.type);
     };
     reader.readAsDataURL(file);
@@ -33,15 +30,21 @@ function App() {
   // Store response when a new one arrives
   useEffect(() => {
     if (response) {
-      setResponseText(response); // ✅ Keep HTML content for App.jsx
-      const cleanResponse = stripHtmlTags(response); // ❌ Remove HTML for Sidebar.jsx
-      setPrevPrompts((prev) => [{ text: cleanResponse, image: imageData }, ...prev.slice(0, 9)]);
+      const cleanResponse = stripHtmlTags(response);
+      setPrevPrompts((prev) => [{ text: cleanResponse, html: response, img: imageData }, ...prev.slice(0, 9)]);
+      setSelectedResponse(response);
     }
   }, [response]);
 
+  // Function to handle past document selection
+  const handleSelectPrompt = (selectedPrompt) => {
+    setImageData(selectedPrompt.img);
+    setSelectedResponse(selectedPrompt.html);
+  };
+
   return (
     <div className="flex w-full">
-      <Sidebar prevPrompts={prevPrompts} />
+      <Sidebar prevPrompts={prevPrompts} onSelectPrompt={handleSelectPrompt} />
       <div className="flex flex-col min-h-screen w-full bg-gray-100">
         <header className="w-full bg-blue-600 text-white py-4 text-center text-xl font-semibold shadow-md">
           Document Identification & Recognition
@@ -62,7 +65,6 @@ function App() {
             />
           )}
 
-          {/* File Upload Button */}
           <input
             type="file"
             accept="image/*"
@@ -75,10 +77,10 @@ function App() {
               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           />
 
-          {responseText && (
+          {selectedResponse && (
             <div
               className="mt-4 p-4 bg-white border border-gray-300 rounded-lg text-gray-800 text-sm leading-relaxed shadow-md w-full max-w-lg"
-              dangerouslySetInnerHTML={{ __html: responseText }} // ✅ Keeps HTML formatting for App.jsx
+              dangerouslySetInnerHTML={{ __html: selectedResponse }}
             ></div>
           )}
         </main>

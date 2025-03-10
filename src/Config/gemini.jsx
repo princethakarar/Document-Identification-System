@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = "AIzaSyBFfOMVFqC3zh70lH9-tBlQ5FHM5cGpMVI"; // Replace with your actual API key
+const apiKey = "AIzaSyBFfOMVFqC3zh70lH9-tBlQ5FHM5cGpMVI"; 
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -33,7 +33,7 @@ async function run(base64string, mimeType) {
             }
         }
 
-        return newArray; // Returning formatted response
+        return newArray; 
     } catch (error) {
         console.error("Error processing image:", error);
         return "Failed to get response.";

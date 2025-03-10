@@ -7,7 +7,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function run(base64string, mimeType) {
     try {
-        const prompt = "Which document is this and give numerical details written in the document.";
+        const prompt = `Which document is this and give numerical details written in the document. and behave professionaly don't print unneccessary text(like, here is numerical details and all or numerical details are) i mean to say that you don't need to print it is numerical details we can understand what it is`;
 
         const result = await model.generateContent([
             { text: prompt },

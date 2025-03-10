@@ -7,7 +7,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function run(base64string, mimeType) {
     try {
-        const prompt = `Which document is this and give numerical details written in the document. and behave professionaly don't print unneccessary text(like, here is numerical details and all or numerical details are) i mean to say that you don't need to print it is numerical details we can understand what it is. give details in bold and numerical details in normal details should be accurate`;
+        const prompt = `Which document is this and give numerical details written in the document. and behave professionaly don't print unneccessary text(like, here is numerical details and all or numerical details are) i mean to say that you don't need to print it is numerical details we can understand what it is. give details in bold and numerical details in normal details should be accurate. in the starting 10 character of response should contain document name`;
 
         const result = await model.generateContent([
             { text: prompt },
@@ -22,7 +22,7 @@ async function run(base64string, mimeType) {
         const response = await result.response.text();
         
         // Split and format response
-        let responseArray = response.split("**").map(item => item.trim());;
+        let responseArray = response.split("**").map(item => item.trim());
         let newArray = "";
 
         for (let i = 0; i < responseArray.length; i++) {

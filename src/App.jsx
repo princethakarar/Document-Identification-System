@@ -6,6 +6,7 @@ import { Context } from "./context/Context";
 function App() {
   const [imageData, setImageData] = useState(null);
   const { onSent, response } = useContext(Context);
+  const [responseText, setResponseText] = useState(null);
   const [prevPrompts, setPrevPrompts] = useState([]); // Store previous responses
 
   // Function to remove HTML tags
@@ -22,18 +23,19 @@ function App() {
     reader.onload = async (e) => {
       let base64string = e.target.result.split(",")[1];
       setImageData(e.target.result);
-      
+
       // Send image to Gemini API
       onSent(base64string, file.type);
     };
     reader.readAsDataURL(file);
   };
 
-  // Store response when a new one arrives, stripping HTML tags
+  // Store response when a new one arrives
   useEffect(() => {
     if (response) {
-      const cleanResponse = stripHtmlTags(response);
-      setPrevPrompts((prev) => [cleanResponse, ...prev.slice(0, 9)]); // Keep only last 10 entries
+      setResponseText(response); // ✅ Keep HTML content for App.jsx
+      const cleanResponse = stripHtmlTags(response); // ❌ Remove HTML for Sidebar.jsx
+      setPrevPrompts((prev) => [{ text: cleanResponse, image: imageData }, ...prev.slice(0, 9)]);
     }
   }, [response]);
 
@@ -73,10 +75,10 @@ function App() {
               focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           />
 
-          {response && (
+          {responseText && (
             <div
               className="mt-4 p-4 bg-white border border-gray-300 rounded-lg text-gray-800 text-sm leading-relaxed shadow-md w-full max-w-lg"
-              dangerouslySetInnerHTML={{ __html: response }}
+              dangerouslySetInnerHTML={{ __html: responseText }} // ✅ Keeps HTML formatting for App.jsx
             ></div>
           )}
         </main>

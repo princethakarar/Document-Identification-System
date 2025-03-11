@@ -11,25 +11,26 @@ function App() {
   const [file, setFile] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showInfo, setShowInfo] = useState(true);
-  const [isHistorySelected, setIsHistorySelected] = useState(false); // NEW: Track history selection
+  const [isHistorySelected, setIsHistorySelected] = useState(false);
 
-  // Function to remove HTML tags from response text
+  // Function to strip HTML tags for storing raw text in the sidebar
   const stripHtmlTags = (html) => {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    return doc.body.textContent || "";
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || "";
   };
 
-  // Handle file upload for image processing
-  const handleImageChange = async (event) => {
+  // Handle file upload
+  const handleImageChange = (event) => {
     const uploadedFile = event.target.files[0];
     if (!uploadedFile) return;
 
     setFile(uploadedFile);
     let reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       setImageData(e.target.result);
       setShowInfo(false);
-      setIsHistorySelected(false); // Reset history flag
+      setIsHistorySelected(false);
     };
     reader.readAsDataURL(uploadedFile);
   };
@@ -43,39 +44,45 @@ function App() {
     }
   };
 
-  // Handle response updates & store in history
+  // Handle response updates & store formatted + raw text separately
   useEffect(() => {
     if (response) {
-      setResponseText(response);
-      const cleanResponse = stripHtmlTags(response);
-      setPrevPrompts((prev) => [{ text: cleanResponse, image: imageData, fileName: file?.name }, ...prev]);
+      setResponseText(response); // Store HTML response
+      setPrevPrompts((prev) => [
+        {
+          text: stripHtmlTags(response), // Store plain text for sidebar
+          htmlText: response, // Store HTML for main display
+          image: imageData,
+          fileName: file?.name,
+        },
+        ...prev,
+      ]);
     }
   }, [response]);
 
-  // Function to reset the chat but keep the sidebar history
+  // Handle selecting a previous prompt
+  const handleSelectPrompt = (item) => {
+    setResponseText(item.htmlText); // Load formatted HTML response
+    setImageData(item.image);
+    setFile({ name: item.fileName });
+    setShowInfo(false);
+    setIsConfirmed(true);
+    setIsHistorySelected(true);
+  };
+
+  // Reset chat
   const handleNewChat = () => {
     setResponseText(null);
     setImageData(null);
     setFile(null);
     setIsConfirmed(false);
     setShowInfo(true);
-    setIsHistorySelected(false); // Reset history flag
+    setIsHistorySelected(false);
   };
 
   return (
     <div className="flex w-full">
-      <Sidebar 
-        prevPrompts={prevPrompts} 
-        onSelectPrompt={(item) => {
-          setResponseText(item.text);
-          setImageData(item.image);
-          setFile({ name: item.fileName });
-          setShowInfo(false);
-          setIsConfirmed(true); // Mark it as confirmed (skip submit button)
-          setIsHistorySelected(true); // NEW: Mark history selection
-        }} 
-        onNewChat={handleNewChat} 
-      />
+      <Sidebar prevPrompts={prevPrompts} onSelectPrompt={handleSelectPrompt} onNewChat={handleNewChat} />
 
       <div className="flex flex-col min-h-screen w-full bg-gray-100">
         <header className="w-full bg-blue-600 text-white py-4 text-center text-xl font-semibold shadow-md">
@@ -92,7 +99,6 @@ function App() {
         )}
 
         <main className="flex flex-col flex-grow items-center justify-center w-full max-w-screen-lg mx-auto px-4 py-8">
-          {/* Image Preview (Always Shows After Upload) */}
           {imageData && (
             <div className="mt-6 flex flex-col items-center">
               <img
@@ -104,36 +110,28 @@ function App() {
             </div>
           )}
 
-          {/* Upload File Button */}
-{!imageData ? (
-  <label className="mt-4 flex flex-col items-center justify-center w-fit px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-md cursor-pointer border-2 border-transparent transition-all duration-300 ease-in-out hover:from-blue-600 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
-    <span className="flex items-center space-x-2">
-      <span>Choose File</span>
-    </span>
-    <input
-      type="file"
-      accept="image/*"
-      onChange={handleImageChange}
-      className="hidden"
-    />
-  </label>
-) : (
-  !isConfirmed && !isHistorySelected && ( // Hide submit button if history is selected
-    <button
-      onClick={handleSubmit}
-      className="mt-4 px-6 py-3 text-sm font-semibold text-white bg-green-500 rounded-lg shadow-md border-2 border-transparent transition-all duration-300 ease-in-out cursor-pointer hover:bg-green-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
-    >
-      Confirm & Submit
-    </button>
-  )
-)}
+          {!imageData ? (
+            <label className="mt-4 flex flex-col items-center justify-center w-fit px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-md cursor-pointer border-2 border-transparent transition-all duration-300 ease-in-out hover:from-blue-600 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+              <span className="flex items-center space-x-2">
+                <span>Choose File</span>
+              </span>
+              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+            </label>
+          ) : (
+            !isConfirmed && !isHistorySelected && (
+              <button
+                onClick={handleSubmit}
+                className="mt-4 px-6 py-3 text-sm font-semibold text-white bg-green-500 rounded-lg shadow-md border-2 border-transparent transition-all duration-300 ease-in-out cursor-pointer hover:bg-green-600 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
+              >
+                Confirm & Submit
+              </button>
+            )
+          )}
 
-
-          {/* Response Display (Only Shows After Confirm & Submit or History Selection) */}
           {(isConfirmed || isHistorySelected) && responseText && (
             <div
               className="mt-4 p-4 bg-white border border-gray-300 rounded-lg text-gray-800 text-sm leading-relaxed shadow-md w-full max-w-lg"
-              dangerouslySetInnerHTML={{ __html: responseText }}
+              dangerouslySetInnerHTML={{ __html: responseText }} // Shows HTML formatted response
             ></div>
           )}
         </main>

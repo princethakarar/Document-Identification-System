@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import "./App.css";
 import Sidebar from "./sidebar/sidebar";
 import { Context } from "./context/Context";
+import { databasesHack, storageHack } from "./Config/appwrite.js";
 
 function App() {
   const [imageData, setImageData] = useState(null);
@@ -12,6 +13,42 @@ function App() {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showInfo, setShowInfo] = useState(true);
   const [isHistorySelected, setIsHistorySelected] = useState(false);
+  const [imageURI, setImageURI] = useState(""); // Convert to state variable
+
+  //function to upload file in appwrite bucket
+  const uploadFile = async (file) => {
+    try {
+        const responsee = await storageHack.createFile(
+            "67cf439a001a12c434ce",
+            "unique()",
+            file
+        );
+        console.log("File uploaded successfully:", responsee);
+        const url = `https://cloud.appwrite.io/v1/storage/buckets/67cf439a001a12c434ce/files/${responsee.$id}/view?project=677301de002106afb13b`;
+        setImageURI(url);
+        return url;
+    } catch (error) {
+        console.error("Upload failed:", error);
+        return "";
+    }
+  };
+
+  async function uploadResponse(ress, urll){
+    try{
+      let upRes = await databasesHack.createDocument(
+        '677305ac00095c78d53e',
+        '67cf3c69000832926f29',
+        'unique()',
+        {
+          'res': ress,
+          'imageURI': urll
+        }
+      );
+      console.log('res uploaded successfully', upRes);
+    } catch(e) {
+      console.log('error occurs when uploading res', e);
+    }
+  }
 
   // Function to strip HTML tags for storing raw text in the sidebar
   const stripHtmlTags = (html) => {
@@ -36,29 +73,43 @@ function App() {
   };
 
   // Confirm & Submit button action
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+
     if (imageData && file) {
+      // Upload the file first and get the URL
+      const imageUrl = await uploadFile(file);
+      
+      // Process the image data
       let base64string = imageData.split(",")[1];
       onSent(base64string, file.type);
       setIsConfirmed(true);
+      
+      // Store the image URL for later use when response comes back
+      setImageURI(imageUrl);
     }
   };
 
-  // Handle response updates & store formatted + raw text separately
+  // Effect to update response and upload to database
   useEffect(() => {
     if (response) {
-      setResponseText(response); // Store HTML response
-      setPrevPrompts((prev) => [
-        {
-          text: stripHtmlTags(response), // Store plain text for sidebar
-          htmlText: response, // Store HTML for main display
-          image: imageData,
-          fileName: file?.name,
-        },
-        ...prev,
-      ]);
+
+      setResponseText(response);
+      
+      // Use the imageURI from state for upload
+      uploadResponse(response, imageURI);
+      
+      // Update prevPrompts for sidebar history
+      // setPrevPrompts((prev) => [
+      //   {
+      //     text: stripHtmlTags(response), // Store plain text for sidebar
+      //     htmlText: response, // Store HTML for main display
+      //     image: imageData,
+      //     fileName: file?.name,
+      //   },
+      //   ...prev,
+      // ]);
     }
-  }, [response]);
+  }, [response, imageURI]);
 
   // Handle selecting a previous prompt
   const handleSelectPrompt = (item) => {
@@ -78,6 +129,7 @@ function App() {
     setIsConfirmed(false);
     setShowInfo(true);
     setIsHistorySelected(false);
+    setImageURI(""); // Reset the imageURI state
   };
 
   return (

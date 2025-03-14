@@ -6,16 +6,16 @@ import { databasesHack, storageHack } from "./Config/appwrite.js";
 
 function App() {
   const [imageData, setImageData] = useState(null);
-  const { onSent, response } = useContext(Context);
+  const { onSent, response, setResponse } = useContext(Context);
   const [responseText, setResponseText] = useState(null);
   const [prevPrompts, setPrevPrompts] = useState([]);
   const [file, setFile] = useState(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showInfo, setShowInfo] = useState(true);
   const [isHistorySelected, setIsHistorySelected] = useState(false);
-  const [imageURI, setImageURI] = useState(""); // Convert to state variable
+  const [imageURI, setImageURI] = useState("");
 
-  //function to upload file in appwrite bucket
+  //function to upload file in appwrite bucket and generate image url
   const uploadFile = async (file) => {
     try {
         const responsee = await storageHack.createFile(
@@ -33,6 +33,7 @@ function App() {
     }
   };
 
+  // function to upload gemini res and image url in appwrite
   async function uploadResponse(ress, urll){
     try{
       let upRes = await databasesHack.createDocument(
@@ -44,9 +45,11 @@ function App() {
           'imageURI': urll
         }
       );
-      console.log('res uploaded successfully', upRes);
+      console.log('res uploaded successfully',`Unique ID is ${upRes.$id}`);
+      return upRes.$id
     } catch(e) {
       console.log('error occurs when uploading res', e);
+      return ""
     }
   }
 
@@ -76,7 +79,7 @@ function App() {
   const handleSubmit = async () => {
 
     if (imageData && file) {
-      // Upload the file first and get the URL
+      // first upload image and generate image URL
       const imageUrl = await uploadFile(file);
       
       // Process the image data
@@ -84,36 +87,25 @@ function App() {
       onSent(base64string, file.type);
       setIsConfirmed(true);
       
-      // Store the image URL for later use when response comes back
+      // Store the image URL
       setImageURI(imageUrl);
     }
   };
 
-  // Effect to update response and upload to database
+  // upload response and update state when new respone generates
   useEffect(() => {
-    if (response) {
+    setResponseText(response);
+    if (response && imageURI) {
 
-      setResponseText(response);
-      
-      // Use the imageURI from state for upload
-      uploadResponse(response, imageURI);
-      
-      // Update prevPrompts for sidebar history
-      // setPrevPrompts((prev) => [
-      //   {
-      //     text: stripHtmlTags(response), // Store plain text for sidebar
-      //     htmlText: response, // Store HTML for main display
-      //     image: imageData,
-      //     fileName: file?.name,
-      //   },
-      //   ...prev,
-      // ]);
+      // store image url and gemini response in appwrite
+      let id = uploadResponse(response, imageURI);
+
     }
   }, [response, imageURI]);
 
   // Handle selecting a previous prompt
   const handleSelectPrompt = (item) => {
-    setResponseText(item.htmlText); // Load formatted HTML response
+    setResponseText(item.htmlText);
     setImageData(item.image);
     setFile({ name: item.fileName });
     setShowInfo(false);
@@ -121,7 +113,7 @@ function App() {
     setIsHistorySelected(true);
   };
 
-  // Reset chat
+  // Reset state for handle new chat
   const handleNewChat = () => {
     setResponseText(null);
     setImageData(null);
@@ -129,7 +121,8 @@ function App() {
     setIsConfirmed(false);
     setShowInfo(true);
     setIsHistorySelected(false);
-    setImageURI(""); // Reset the imageURI state
+    setImageURI("");
+    setResponse("")
   };
 
   return (

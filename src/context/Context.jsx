@@ -4,7 +4,7 @@ import run from "../Config/gemini";
 export const Context = createContext();
 
 const ContextProvider = (props) => {
-    const [response, setResponse] = useState("");
+    let [response, setResponse] = useState("");
 
     const onSent = async (base64string, mimeType) => {
         const geminiResponse = await run(base64string, mimeType);
@@ -14,6 +14,7 @@ const ContextProvider = (props) => {
     const contextValue = {
         onSent,
         response,
+        setResponse
     };
 
     return (

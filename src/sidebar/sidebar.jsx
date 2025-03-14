@@ -26,7 +26,7 @@ const Sidebar = ({ prevPrompts, onSelectPrompt, onNewChat }) => {
             {prevPrompts.map((item, index) => (
               <div key={index} className="flex items-center gap-2 p-2 rounded-lg cursor-pointer transition bg-gray-100 hover:bg-gray-200" onClick={() => onSelectPrompt(item)}>
                 <img src={assets.message_icon} alt="message" className="w-5 h-5 flex-shrink-0" />
-                <p className="text-sm truncate w-40">{item.text.slice(0, 30)}...</p>
+                <p className="text-sm truncate w-40">{item.res.slice(0, 30)}...</p>
               </div>
             ))}
           </div>

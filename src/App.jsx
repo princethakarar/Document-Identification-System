@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from "react";
 import "./App.css";
 import Sidebar from "./sidebar/sidebar";
 import { Context } from "./context/Context";
-import { databasesHack, storageHack } from "./Config/appwrite.js";
+import { databasesHack, storageHack, clientHack } from "./Config/appwrite.js";
 
 function App() {
   const [imageData, setImageData] = useState(null);
@@ -14,6 +14,20 @@ function App() {
   const [showInfo, setShowInfo] = useState(true);
   const [isHistorySelected, setIsHistorySelected] = useState(false);
   const [imageURI, setImageURI] = useState("");
+
+  async function prevPromtFetch(){
+    try{
+      let resp = await databasesHack.listDocuments('677305ac00095c78d53e','67cf3c69000832926f29')
+          .then(ob => setPrevPrompts(ob.documents.reverse()))
+          .catch(e => console.log(e));
+    }catch(e){
+        console.log(e);
+    }
+  }
+  useEffect(() => {
+    prevPromtFetch();
+  }, []); 
+
 
   //function to upload file in appwrite bucket and generate image url
   const uploadFile = async (file) => {
@@ -105,12 +119,13 @@ function App() {
 
   // Handle selecting a previous prompt
   const handleSelectPrompt = (item) => {
-    setResponseText(item.htmlText);
-    setImageData(item.image);
-    setFile({ name: item.fileName });
+    setResponseText(item.res);
+    setImageData(item.imageURI);
+    setFile({ name: "" });
     setShowInfo(false);
     setIsConfirmed(true);
     setIsHistorySelected(true);
+    setShowLoaading(true)
   };
 
   // Reset state for handle new chat
@@ -124,6 +139,20 @@ function App() {
     setImageURI("");
     setResponse("")
   };
+
+  useEffect(()=>{
+    const channnel = `databases.${"677305ac00095c78d53e"}.collections.${"67cf3c69000832926f29"}.documents`
+    const unsubscribe = clientHack.subscribe(channnel, (response) => {
+        try{
+            let resp = databasesHack.listDocuments('677305ac00095c78d53e','67cf3c69000832926f29')
+                .then(ob => setPrevPrompts(ob.documents.reverse()))
+                .catch(e => console.log(e));
+        }catch(e){
+            console.log(e);
+        }
+    });
+    return () => unsubscribe();
+  },[])
 
   return (
     <div className="flex w-full">
@@ -144,18 +173,19 @@ function App() {
         )}
 
         <main className="flex flex-col flex-grow items-center justify-center w-full max-w-screen-lg mx-auto px-4 py-8">
-          {imageData && (
+          {(imageData || imageURI) && (
             <div className="mt-6 flex flex-col items-center">
               <img
-                src={imageData}
+                src={imageURI || imageData}
                 alt="Uploaded Preview"
                 className="w-48 md:w-64 lg:w-80 h-auto rounded-lg border border-gray-300 shadow-md"
               />
-              <p className="mt-2 text-gray-600 text-sm">{file?.name}</p>
+              
+              <p className="mt-2 text-gray-600 text-sm">{file?.name || "History"}</p>
             </div>
           )}
 
-          {!imageData ? (
+          {!(imageData|| imageURI) ? (
             <label className="mt-4 flex flex-col items-center justify-center w-fit px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-md cursor-pointer border-2 border-transparent transition-all duration-300 ease-in-out hover:from-blue-600 hover:to-blue-800 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
               <span className="flex items-center space-x-2">
                 <span>Choose File</span>

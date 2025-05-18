@@ -26,7 +26,7 @@ async function run(base64string, mimeType) {
 
         for (let i = 0; i < responseArray.length; i++) {
             if (i === 0 || i % 2 !== 1) {
-                newArray +=  responseArray[i].slice(0, -1);
+                newArray +=  responseArray[i].slice(0, );
             } else {
                 newArray += "<br><b>" + responseArray[i] + "</b>"; 
             }
